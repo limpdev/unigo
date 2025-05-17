@@ -1,22 +1,71 @@
-:root {
-  --font-sans: "SF Pro Text", "Symbols Nerd Font", sans-serif;
-  --font-mono: "SF Mono", "Symbols Nerd Font Mono", monospace;
+/* Consolidated :root and base styles */
+
+* {
+  scrollbar-width: none; /* hides scrollbar */
 }
 
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+:root {
+  /* Primary font for UI text - choose one or define fallbacks */
+  --font-sans: "Nunito", "SF Pro Text", "Symbols Nerd Font", sans-serif; /* Added Nunito here */
+  --font-mono: "SF Mono", "Symbols Nerd Font Mono", monospace;
+
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+
+  scroll-behavior: smooth;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  --sidebar-width: 200px;
+  --header-height: 60px; /* Not currently used, but good to keep if you add a header */
+  --gap: 1rem;
+  --icon-size: 3rem;
+  --border-color: #00000000; /* Transparent border is fine */
+}
+
+/* Ensure html, body, and #app take full height and don't interfere with flex/grid */
 html {
+  height: 100vh;
   background-image: url("assets/images/fabric.png");
-  background-color: rgba(25, 25, 25, 0.5);
-  text-align: center;
+  /* background-color: rgba(25, 25, 25, 0.5); This will be under body's background */
+  /* text-align: center;  <--- REMOVE for block layouts */
   color: white;
+  border-radius: 13px; /* This applies to the HTML element itself */
+  overflow: hidden; /* Prevent scrollbars on html if window is sized perfectly */
 }
 
 body {
-  background-color: rgba(25, 25, 25, 0.5);
-  backdrop-filter: blur(10px);
+  height: 100%; /* Fill html */
   margin: 0;
-  color: white;
   font-family: var(--font-sans);
+  background-color: rgba(25, 25, 25, 0.5); /* Overlays html background */
+  backdrop-filter: blur(10px);
+  color: white;
+  display: flex; /* Make body a flex container */
+  flex-direction: column; /* Ensure #app can grow if needed */
+  overflow: hidden; /* Prevent scrollbars on body */
 }
+
+#app {
+  height: 100%; /* Fill body */
+  width: 100%;
+  display: flex; /* Make #app a flex container for .app-container */
+  /* text-align: center; <--- REMOVE for block layouts */
+}
+
 
 @font-face {
   font-family: "Nunito";
@@ -26,71 +75,40 @@ body {
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
-#app {
-  height: 100vh;
-  text-align: center;
-}
-
-/* Reset and base styles */
-:root {
-  font-size: 16px;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  /* background-color: #242424; */
-  scroll-behavior: smooth;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-  --sidebar-width: 200px;
-  --header-height: 60px;
-  --gap: 1rem;
-  --icon-size: 3rem;
-  --border-color: #00000000;
-}
-body {
-  margin: 0;
-  display: flex;
-  min-width: 320px;
-  min-height: 100vh;
-  box-sizing: border-box;
-}
-*,
-*::before,
-*::after {
-  box-sizing: inherit;
-}
 /* App Layout */
 .app-container {
   display: flex;
-  width: 100%;
-  height: 100vh;
+  width: 100%; /* Fill #app */
+  height: 100%; /* Fill #app */
 }
+
 .sidebar {
   width: var(--sidebar-width);
-  /* background-color: #1e1e1e; */
   padding: var(--gap);
-  border-right: 0px solid var(--border-color);
-  display: flex;
+  border-right: 0px solid var(--border-color); /* This is fine if you want no visible border */
+  display: flex; /* Make sidebar a flex container for its children */
   flex-direction: column;
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
 }
+
 .sidebar h2 {
   margin-top: 0;
-  font-size: 1em;
+  font-size: 1.2em; /* Slightly larger for better readability */
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.5em;
   margin-bottom: 1em;
 }
+
 .sidebar ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .sidebar li button {
-  display: block;
+  display: flex; /* Use flex to align items inside button */
+  justify-content: space-between; /* Pushes count to the right */
+  align-items: center; /* Vertically align text and count */
   width: 100%;
   margin-top: 0.5em;
   padding: 0.75em 1em;
@@ -100,50 +118,70 @@ body {
   text-align: left;
   cursor: pointer;
   border-radius: 4px;
-  font-size: 0.8em;
+  font-size: 0.9em; /* Adjusted for balance */
   transition: all 300ms ease;
 }
+
 .sidebar li button:hover {
   transform: translateX(5px);
   background-color: #333;
   color: white;
 }
+
 .sidebar li button.active {
   background-color: #007accaa;
   color: white;
   font-weight: bold;
 }
-#icon-count {
+
+/* Replaced #icon-count with a class for spans */
+.icon-count-badge {
   font-size: 0.8em;
   color: #f5d863aa;
-  float: right;
+  background-color: rgba(0,0,0,0.2);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
 }
+
 .main-content {
-  flex-grow: 1;
+  flex-grow: 1; /* Allow main content to take remaining width */
   padding: var(--gap);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  width: 100%;
+  /* height: 100vh; <--- REMOVE THIS, height comes from flex parent */
+  /* width: 100%;   <--- Not strictly needed with flex-grow, but harmless */
+  overflow: hidden; /* Important: parent of scrollable area should hide overflow */
+  min-width: 0; /* Fixes potential flexbox shrinkage issue with wide children */
 }
+
 .search-bar {
   margin-bottom: var(--gap);
   padding: 0.5em;
   width: 100%;
-  max-width: 500px;
+  max-width: 500px; /* Or remove max-width if you want it to span more */
   background-color: #333;
   border: 1px solid var(--border-color);
   color: white;
   border-radius: 7px;
+  flex-shrink: 0; /* Prevent search bar from shrinking */
 }
+
 .icon-grid {
-  display: inline-grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  display: grid;
+  width: 100%; /* Take full width of .main-content */
+  /*
+    IMPORTANT: For the grid to scroll, its parent (.main-content) defines the
+    overall height, and the grid itself takes the remaining space and scrolls.
+  */
+  flex-grow: 1; /* Make the grid take all available vertical space in .main-content */
+  overflow-y: auto; /* Enable vertical scrolling FOR THE GRID */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Increased minmax slightly */
   gap: var(--gap);
 }
+
 .icon-card {
   background-color: #2a2a2a;
-  width: 175px;
+  /* width: 175px; <--- REMOVE fixed width; let grid-template-columns handle it */
   border: 1px solid var(--border-color);
   border-radius: 7px;
   padding: var(--gap);
@@ -154,11 +192,14 @@ body {
   text-align: center;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 120px; /* Give cards a minimum height */
 }
+
 .icon-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
+
 .icon-preview {
   width: var(--icon-size);
   height: var(--icon-size);
@@ -166,18 +207,22 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5em;
-  overflow: hidden; /* Prevents large SVGs from breaking layout */
+  overflow: hidden;
 }
+
 .icon-preview svg {
   max-width: 100%;
   max-height: 100%;
-  fill: currentColor; /* For SVGs that use currentColor */
+  fill: currentColor;
 }
+
 .icon-name {
   font-size: 0.8em;
   word-break: break-all;
   color: #ccc;
+  margin-top: auto; /* Pushes name to bottom if card content is sparse */
 }
+
 .toast {
   position: fixed;
   bottom: 20px;
@@ -191,29 +236,23 @@ body {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
+  pointer-events: none; /* So it doesn't intercept clicks when hidden */
 }
+
 .toast.show {
-  opacity: 0;
+  opacity: 1; /* <<< CORRECTED */
 }
+
 /* NERD FONT STYLING */
-/*
-  IMPORTANT:
-  1. Replace 'YourNerdFontName' with a descriptive name for your font.
-  2. Replace 'YourNerdFont.ttf' with the ACTUAL FILENAME of your font
-     in frontend/src/assets/fonts/
-*/
 @font-face {
-  font-family: "Symbols Nerd Font"; /* Choose a name */
-  src: url("./assets/fonts/SymbolsNerdFont-Regular.ttf") format("truetype"); /* UPDATE THIS PATH */
-  /* If you have other formats like woff2, add them:
-  src: url('./assets/fonts/YourNerdFont.woff2') format('woff2'),
-       url('./assets/fonts/YourNerdFont.ttf') format('truetype');
-  */
+  font-family: "Symbols Nerd Font"; /* This name is used below */
+  src: url("./assets/fonts/SymbolsNerdFont-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
+
 .nerd-font-icon-display {
   font-family: "Symbols Nerd Font", monospace; /* Fallback chain */
-  font-size: var(--icon-size); /* Adjust as needed */
+  font-size: var(--icon-size);
   line-height: 1;
 }

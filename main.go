@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -55,6 +56,14 @@ func main() {
 				Title:   "uniGO",
 				Message: "MIT",
 			},
+		},
+		Windows: &windows.Options{
+			WebviewIsTransparent:              true,
+			WindowIsTranslucent:               false,
+			// BackdropType:                      windows.Acrylic,
+			DisablePinchZoom:                  true,
+			DisableWindowIcon:                 false,
+			DisableFramelessWindowDecorations: false,
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: false,
