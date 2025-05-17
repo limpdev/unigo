@@ -1,3 +1,9 @@
 build/bin
 node_modules
 frontend/dist
+archive/
+desktop.ini
+Desktop.ini
+unigo
+unigo.exe
+DEV.md
