@@ -650,7 +650,7 @@ This comprehensive setup should give you a solid foundation. You can now expand 
 
 ---
 
-## 📜TRIAL TWO
+<details><summary><i>📜TRIAL TWO</i></summary>
 
 The main layout issues ("main content won't fill the window" and "grid stuck to one column") are indeed CSS-related, primarily stemming from how heights and widths are being managed in the flex/grid containers, and some conflicting global styles.
 
@@ -1179,3 +1179,141 @@ After applying these changes, rebuild (`wails dev` or `wails build`):
 *   The icon grid should display multiple columns and scroll vertically if there are many icons.
 
 Test thoroughly. Flexbox and Grid layouts can be tricky, and sometimes small changes have big effects, especially concerning overflow and height/width calculations.
+
+</details>
+
+---
+
+## 🔥TRIAL THREE
+
+**1. The Custom `AssetServer.Handler` (`iconLoader`) is the Primary Suspect**
+
+In your `main.go`, you have:
+
+```go
+// main.go
+AssetServer: &assetserver.Options{
+    Assets:  assets, // This is your embedded frontend/dist
+    Handler: iconLoader(), // THIS IS THE CUSTOM HANDLER
+},
+```
+
+Your `iconLoader` in `app.go` does this:
+
+```go
+// app.go
+func (h *Loader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var err error
+	reqIcon := strings.TrimPrefix(req.URL.Path, "/") // e.g., "assets/fonts/SymbolsNerdFont-Regular.ttf"
+	println("REQ: Requesting icon:", reqIcon)
+	iconData, err := os.ReadFile(reqIcon) // Tries to read from filesystem: CWD/assets/fonts/...
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintf("Couldn't load file %s", reqIcon)))
+	}
+	res.Write(iconData)
+}
+```
+
+**Why this is problematic for your fonts:**
+
+*   **Takes Precedence:** When you provide a custom `Handler` to Wails' `AssetServer`, it generally takes precedence for requests that aren't handled by Wails' internal routing (like the Wails JavaScript bridge).
+*   **Filesystem vs. Embedded Assets:** Your frontend assets (including fonts processed by Vite) are embedded into the `assets embed.FS`. The `iconLoader`, however, tries to read files directly from the **filesystem** using `os.ReadFile(reqIcon)`.
+*   **Incorrect Path for `os.ReadFile`:** The `reqIcon` path (e.g., `assets/fonts/SymbolsNerdFont-Regular.somehash.ttf` after Vite build) is a URL path relative to your application's web root. `os.ReadFile` expects a filesystem path relative to the current working directory (CWD) of your executable. These are not the same, especially when the app is built and packaged. The font file isn't typically sitting in `CWD/assets/fonts/`.
+
+**The font request is likely going to `iconLoader`, which then fails to find the file on the filesystem, resulting in the font not loading.**
+
+**Solution & Debugging Steps:**
+
+**Step 1: Temporarily Disable the Custom Handler**
+Modify `main.go` to comment out the handler:
+
+```go
+// main.go
+AssetServer: &assetserver.Options{
+    Assets:  assets,
+    // Handler: iconLoader(), // <--- COMMENT THIS OUT FOR NOW
+},
+```
+Then, rebuild and run (`wails dev`).
+**If your Nerd Fonts load now, the `iconLoader` was indeed the problem for font serving.**
+
+**Step 2: If `iconLoader` was the issue, reconsider its purpose.**
+*   **Is `iconLoader` meant to serve your main frontend assets (like CSS, JS, fonts)?** If so, it's implemented incorrectly for embedded assets. You should generally rely on Wails' default mechanism for serving from `embed.FS`.
+*   **Is `iconLoader` for a *different* purpose?** (e.g., dynamically serving user-provided images from a *specific non-embedded* directory at runtime via special URLs). If so:
+    *   It should not be the general `AssetServer.Handler`.
+    *   You might use `AssetServer.Middleware` to intercept *specific* paths intended for `iconLoader` and let other requests (like for your `frontend/dist` assets) pass through to the default Wails embedded asset server.
+    *   Or, bind a Go function that takes a path and returns `[]byte`, and call that from JS when you need those specific dynamic assets.
+
+**2. Duplicate `@font-face` Rule in CSS**
+
+In your `frontend/src/style.css`, you have two `@font-face` declarations for `"Symbols Nerd Font"`:
+
+First one (problematic for built assets):
+```css
+@font-face {
+  font-family: "Symbols Nerd Font";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""), /* Checks local install first */
+    url("frontend/src/assets/fonts/SymbolsNerdFont-Regular.ttf") format("ttf"); /* Path incorrect after build */
+}
+```
+
+Second one (correct for Vite development and build):
+```css
+@font-face {
+  font-family: "Symbols Nerd Font"; /* This name is used below */
+  src: url("./assets/fonts/SymbolsNerdFont-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+```
+The browser will likely use the second one, which is good. However, the first one is incorrect and confusing.
+**Action:** Remove the first, incorrect `@font-face` rule. Keep only the second one:
+
+```css
+/* In frontend/src/style.css */
+@font-face {
+  font-family: "Symbols Nerd Font";
+  src: url("./assets/fonts/SymbolsNerdFont-Regular.ttf") format("truetype"); /* Vite processes this path */
+  font-weight: normal;
+  font-style: normal;
+}
+```
+Ensure the file `frontend/src/assets/fonts/SymbolsNerdFont-Regular.ttf` actually exists.
+
+**3. Check Browser Developer Tools**
+
+Even if you disable the custom handler, if fonts still don't load:
+*   Run `wails dev`.
+*   Open the Developer Tools in the Wails app window (usually F12 or Ctrl+Shift+I/Cmd+Opt+I).
+*   Go to the **Network** tab.
+*   Reload the Wails app (Ctrl+R or Cmd+R).
+*   Filter for font files or look for `SymbolsNerdFont-Regular.ttf` (or whatever Vite renames it to, often with a hash).
+    *   **Status 404 (Not Found):** The path Vite generated in the final CSS is wrong, or Wails isn't serving it. This points back to asset server issues or incorrect CSS `url()`.
+    *   **Status 200 (OK):** The font file is being loaded. If icons still don't appear:
+        *   Go to the **Elements** tab, inspect an element that should use the Nerd Font (e.g., `span.nerd-font-icon-display`).
+        *   Check its **Computed** styles. Is `font-family: "Symbols Nerd Font"` being applied, or is it falling back to `monospace`? If it's falling back, there might be a typo in the `font-family` name in your CSS rules vs. the `@font-face` declaration, or the font file itself might be an issue.
+
+**4. SVGO `loadConfig` Import**
+
+In `frontend/src/App.svelte`, you have:
+```svelte
+import { loadConfig } from 'svgo';
+```
+This `loadConfig` is not used anywhere in your component. You can safely remove it if you're not planning to load SVGO configurations from external files (like `svgo.config.js`).
+
+**Summary of Recommendations:**
+
+1.  **Most Importantly:** Comment out `Handler: iconLoader()` in `main.go`'s `AssetServer` options and test. This is the most likely cause.
+2.  Remove the duplicate, incorrect `@font-face` rule from `frontend/src/style.css`.
+3.  Verify the font file `SymbolsNerdFont-Regular.ttf` exists at `frontend/src/assets/fonts/`.
+4.  Use browser developer tools (Network and Elements tabs) to trace font loading and CSS application.
+5.  Remove the unused `import { loadConfig } from 'svgo';` from `App.svelte`.
+
+Your Nerd Font JSON snippet looks correct. The `codepoint` values are simple hex strings, which `parseInt(icon.codepoint, 16)` will handle correctly.
+
+The `archive/uniGo.go` file seems unrelated to this specific Wails app's font loading and is likely for a different standalone project or exploration.
+
+Start with disabling the `iconLoader`, as that's a significant deviation from standard Wails asset serving and a strong candidate for the problem.

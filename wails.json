@@ -1,6 +1,13 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "uniGo",
+  "info": {
+  "comments": "Preview/Store your favorite icons and vectors.",
+  "companyName": "limpdev"
+  },
+  "fileAssociations": {
+    "iconName": "build/appicon"
+  },
   "outputfilename": "uniGo",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",

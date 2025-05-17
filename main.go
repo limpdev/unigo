@@ -13,6 +13,12 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/appicon.png
+var appIcon []byte
+
+//go:embed content/nerd-fonts/icons.json
+var embeddedIcons []byte
+
 func main() {
 	// Create an instance of the app structure
 	app := NewApp() // This NewApp() comes from app.go
@@ -29,6 +35,7 @@ func main() {
 		EnableDefaultContextMenu: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
+			// Handler: iconLoader(),
 		},
 		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
 		OnStartup:        app.startup, // Use the startup method from app.go
@@ -55,11 +62,12 @@ func main() {
 			About: &mac.AboutInfo{
 				Title:   "uniGO",
 				Message: "MIT",
+				Icon:    appIcon,
 			},
 		},
 		Windows: &windows.Options{
-			WebviewIsTransparent:              true,
-			WindowIsTranslucent:               false,
+			WebviewIsTransparent: true,
+			WindowIsTranslucent:  false,
 			// BackdropType:                      windows.Acrylic,
 			DisablePinchZoom:                  true,
 			DisableWindowIcon:                 false,

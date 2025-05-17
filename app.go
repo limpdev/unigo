@@ -19,6 +19,27 @@ func NewApp() *App {
 	return &App{}
 }
 
+// // DESIGNATED ASSET *HANDLER*
+// type Loader struct {
+// 	http.Handler
+// }
+
+// func iconLoader() *Loader {
+// 	return &Loader{}
+// }
+
+// func (h *Loader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+// 	var err error
+// 	reqIcon := strings.TrimPrefix(req.URL.Path, "/")
+// 	println("REQ: Requesting icon:", reqIcon)
+// 	iconData, err := os.ReadFile(reqIcon)
+// 	if err != nil {
+// 		res.WriteHeader(http.StatusBadRequest)
+// 		res.Write([]byte(fmt.Sprintf("Couldn't load file %s", reqIcon)))
+// 	}
+// 	res.Write(iconData)
+// }
+
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
